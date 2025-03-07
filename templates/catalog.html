@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Catalog - Library System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #5E4B56; /* Warm purple-brown */
+            --secondary-color: #8E7D73; /* Muted taupe */
+            --accent-color: #2E5077; /* Deep blue */
+            --light-color: #F9F7F4; /* Off-white/cream */
+            --dark-color: #34302D; /* Deep charcoal */
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-color);
+            color: #333;
+        }
+        
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            font-family: 'Georgia', serif;
+        }
+        
+        .navbar-brand i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .nav-link {
+            font-weight: 500;
+        }
+        
+        .page-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+        }
+        
+        .page-title {
+            font-family: 'Georgia', serif;
+            font-weight: 700;
+        }
+        
+        .book-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            height: 100%;
+            border: none;
+        }
+        
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .book-card .card-img-top {
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .book-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .book-card .card-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-family: 'Georgia', serif;
+        }
+        
+        .book-card .card-subtitle {
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        
+        .filters {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .status-available {
+            color: #2ECC71;
+        }
+        
+        .status-borrowed {
+            color: #F39C12;
+        }
+        
+        .status-reserved {
+            color: var(--accent-color);
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            padding: 10px 25px;
+            font-weight: 500;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1D3F65;
+            border-color: #1D3F65;
+        }
+        
+        .btn-outline-primary {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            font-weight: 500;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .badge-info {
+            background-color: var(--accent-color);
+        }
+        
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom: none;
+        }
+        
+        .modal-header .close {
+            color: white;
+            text-shadow: none;
+        }
+        
+        .alerts {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="alerts">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-book-reader fa-lg"></i>
+                Alexandria Library
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('catalog') }}">Catalog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('list_members') }}">Members</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('list_loans') }}">Loans</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1 class="page-title">Book Catalog</h1>
+            <p class="lead">Browse our extensive collection of literary works</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="filters">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="category-filter">Category</label>
+                        <select class="form-control" id="category-filter">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                                <option value="{{ category.CategoryID }}">{{ category.CategoryName }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="status-filter">Status</label>
+                        <select class="form-control" id="status-filter">
+                            <option value="">All Status</option>
+                            <option value="Available">Available</option>
+                            <option value="Borrowed">Borrowed</option>
+                            <option value="Reserved">Reserved</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="search">Search</label>
+                        <input type="text" class="form-control" id="search" placeholder="Search by title, author, ISBN...">
+                    </div>
+                </div>
+            </div>
+            <div class="text-right">
+                {% if 'Admin' in g.roles or 'Staff' in g.roles %}
+                <button class="btn btn-primary" data-toggle="modal" data-target="#addBookModal">
+                    <i class="fas fa-plus mr-1"></i> Add New Book
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row" id="bookContainer">
+            {% if books %}
+                {% for book in books %}
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-4 book-item">
+                        <div class="card book-card">
+                            <div class="card-img-top d-flex justify-content-center align-items-center bg-light" style="height: 200px;">
+                                {% if book.CoverImage %}
+                                    <img src="{{ book.CoverImage }}" class="card-img-top" alt="{{ book.Title }}" 
+                                         onerror="this.onerror=null; this.src='https://via.placeholder.com/200x300?text={{ book.Title | urlencode }}'; this.style='max-height:200px; width:auto; margin:auto;'">
+                                {% else %}
+                                    <div class="text-center">
+                                        <i class="fas fa-book fa-3x text-muted"></i>
+                                        <div class="mt-2 text-muted small">{{ book.Title }}</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ book.Title }}</h5>
+                                <h6 class="card-subtitle">{{ book.Author }}</h6>
+                                
+                                <div class="mb-2">
+                                    {% if book.CategoryName %}
+                                        <span class="badge badge-info">{{ book.CategoryName }}</span>
+                                    {% endif %}
+                                    <span class="badge badge-secondary">{{ book.PublicationYear }}</span>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="status-{{ book.Status.lower() }}">
+                                            <i class="fas fa-circle mr-1"></i> {{ book.Status }}
+                                        </span>
+                                    </div>
+                                    <a href="{{ url_for('view_book', book_id=book.BookID) }}" class="btn btn-sm btn-outline-primary">
+                                        Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle mr-2"></i> No books found in the catalog.
+                        {% if 'Admin' in g.roles or 'Staff' in g.roles %}
+                            <button class="btn btn-sm btn-outline-primary ml-3" data-toggle="modal" data-target="#addBookModal">Add New Book</button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Add Book Modal -->
+    {% if 'Admin' in g.roles or 'Staff' in g.roles %}
+    <div class="modal fade" id="addBookModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Book</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ url_for('add_book') }}" method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="title">Title</label>
+                                    <input type="text" class="form-control" id="title" name="title" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="author">Author</label>
+                                    <input type="text" class="form-control" id="author" name="author" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="isbn">ISBN</label>
+                                    <input type="text" class="form-control" id="isbn" name="isbn">
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="publication_year">Publication Year</label>
+                                        <input type="number" class="form-control" id="publication_year" name="publication_year">
+                                    </div>
+                                    
+                                    <div class="form-group col-md-6">
+                                        <label for="category">Category</label>
+                                        <select class="form-control" id="category" name="category_id">
+                                            <option value="">-- Select Category --</option>
+                                            {% for category in categories %}
+                                                <option value="{{ category.CategoryID }}">{{ category.CategoryName }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="publisher">Publisher</label>
+                                    <input type="text" class="form-control" id="publisher" name="publisher">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="description">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="5"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="cover_image">Cover Image URL</label>
+                                    <input type="text" class="form-control" id="cover_image" name="cover_image" placeholder="http://...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Book</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Fix specific book covers that are known to have issues
+            const problemBooks = {
+                "The Art of War": "https://bookcover-api.herokuapp.com/generate?title=The%20Art%20of%20War&author=Sun%20Tzu",
+                "Pride and Prejudice": "https://bookcover-api.herokuapp.com/generate?title=Pride%20and%20Prejudice&author=Jane%20Austen",
+                "The Lord of the Rings": "https://bookcover-api.herokuapp.com/generate?title=The%20Lord%20of%20the%20Rings&author=J.R.R.%20Tolkien",
+                "Thinking, Fast and Slow": "https://bookcover-api.herokuapp.com/generate?title=Thinking%20Fast%20and%20Slow&author=Daniel%20Kahneman"
+            };
+            
+            // Enhance image error handling for all books
+            $('.book-card').each(function() {
+                const title = $(this).find('.card-title').text().trim();
+                const imgContainer = $(this).find('.card-img-top');
+                
+                if (problemBooks[title]) {
+                    // For known problematic books, use a more reliable fallback approach
+                    imgContainer.empty().append(
+                        $('<div>').addClass('text-center py-5')
+                            .append($('<i>').addClass('fas fa-book fa-3x text-muted'))
+                            .append($('<div>').addClass('mt-3 font-weight-bold').text(title))
+                    );
+                }
+            });
+            
+            // Existing filter functionality
+            $("#search, #category-filter, #status-filter").on("keyup change", function() {
+                var search = $("#search").val().toLowerCase();
+                var category = $("#category-filter").val();
+                var status = $("#status-filter").val().toLowerCase();
+                
+                $(".book-item").each(function() {
+                    var bookCard = $(this);
+                    var title = bookCard.find(".card-title").text().toLowerCase();
+                    var author = bookCard.find(".card-subtitle").text().toLowerCase();
+                    var bookCategory = bookCard.find(".badge-info").text();
+                    var bookStatus = bookCard.find(".status-available, .status-borrowed, .status-reserved").text().toLowerCase();
+                    
+                    var matchesSearch = title.includes(search) || author.includes(search);
+                    var matchesCategory = category === "" || bookCategory === category;
+                    var matchesStatus = status === "" || bookStatus.includes(status);
+                    
+                    if (matchesSearch && matchesCategory && matchesStatus) {
+                        bookCard.show();
+                    } else {
+                        bookCard.hide();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

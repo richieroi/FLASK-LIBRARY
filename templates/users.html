@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Library System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2ecc71;
+            --secondary-dark: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background-color: var(--dark-color);
+            color: white;
+            min-height: 100vh;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 250px;
+            overflow-y: auto;
+        }
+        
+        .sidebar .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar .logo i {
+            font-size: 48px;
+            color: var(--primary-color);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 0;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: white;
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: white;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar .user-info {
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9em;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-header .btn {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .table th {
+            border-top: none;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .user-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .user-status.active {
+            background-color: var(--secondary-color);
+        }
+        
+        .user-status.inactive {
+            background-color: var(--danger-color);
+        }
+        
+        .role-badge {
+            font-size: 0.75rem;
+            padding: 0.25em 0.6em;
+            margin-right: 3px;
+        }
+        
+        .role-Admin {
+            background-color: #9b59b6;
+        }
+        
+        .role-Staff {
+            background-color: #3498db;
+        }
+        
+        .role-Member {
+            background-color: #2ecc71;
+        }
+        
+        .role-Guest {
+            background-color: #95a5a6;
+        }
+        
+        .btn-icon {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .btn-icon i {
+            margin-right: 5px;
+        }
+        
+        .user-actions .btn {
+            margin-right: 5px;
+        }
+        
+        .alerts {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .dataTables_wrapper .dataTables_length, 
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="alerts">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-book-reader"></i>
+            <h5 class="mt-2 mb-0">Library System</h5>
+            <p class="small text-muted mb-0">Administration</p>
+        </div>
+        
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('catalog') }}">
+                    <i class="fas fa-book"></i> Book Catalog
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_members') }}">
+                    <i class="fas fa-users"></i> Members
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_loans') }}">
+                    <i class="fas fa-clipboard-list"></i> Loans
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin_users') }}">
+                    <i class="fas fa-user-shield"></i> User Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_roles') }}">
+                    <i class="fas fa-user-tag"></i> Roles
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_logs') }}">
+                    <i class="fas fa-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_backup') }}">
+                    <i class="fas fa-database"></i> Backup & Recovery
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+        
+        <div class="user-info">
+            <div class="d-flex align-items-center">
+                <div class="mr-3">
+                    <i class="fas fa-user-circle fa-2x text-muted"></i>
+                </div>
+                <div>
+                    <small class="d-block text-muted">Logged in as</small>
+                    <span>{{ g.user.Username }}</span>
+                    <small class="d-block text-muted mt-1">
+                        {% for role in g.roles %}
+                            <span class="badge badge-secondary">{{ role }}</span>
+                        {% endfor %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="container-fluid">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent px-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">User Management</li>
+                </ol>
+            </nav>
+            
+            <h2 class="mb-4">User Management</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <span>Users</span>
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#addUserModal">
+                        <i class="fas fa-plus"></i> Add New User
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Roles</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.Username }}</td>
+                                    <td>{{ user.Email }}</td>
+                                    <td>{{ user.FirstName ~ " " ~ user.LastName if user.FirstName and user.LastName else "-" }}</td>
+                                    <td>
+                                        {% if user.Roles %}
+                                            {% for role in user.Roles.split(', ') %}
+                                                <span class="badge badge-pill role-badge role-{{ role }}">{{ role }}</span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">No roles</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.IsActive %}
+                                            <span class="user-status active"></span> Active
+                                        {% else %}
+                                            <span class="user-status inactive"></span> Inactive
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ user.LastLogin.strftime('%Y-%m-%d %H:%M') if user.LastLogin else 'Never' }}
+                                    </td>
+                                    <td class="user-actions">
+                                        <button class="btn btn-sm btn-info btn-icon" data-toggle="modal" data-target="#editUserModal-{{ user.UserID }}">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-warning btn-icon" data-toggle="modal" data-target="#resetPasswordModal-{{ user.UserID }}">
+                                            <i class="fas fa-key"></i> Reset
+                                        </button>
+                                        <button class="btn btn-sm {{ 'btn-danger' if user.IsActive else 'btn-success' }} btn-icon" data-toggle="modal" data-target="#toggleStatusModal-{{ user.UserID }}">
+                                            <i class="fas {{ 'fa-user-times' if user.IsActive else 'fa-user-check' }}"></i> {{ 'Disable' if user.IsActive else 'Enable' }}
+                                        </button>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Edit User Modal -->
+                                <div class="modal fade" id="editUserModal-{{ user.UserID }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Edit User: {{ user.Username }}</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <form action="{{ url_for('admin_edit_user', user_id=user.UserID) }}" method="post">
+                                                <div class="modal-body">
+                                                    <div class="form-group">
+                                                        <label for="email-{{ user.UserID }}">Email</label>
+                                                        <input type="email" class="form-control" id="email-{{ user.UserID }}" name="email" value="{{ user.Email }}" required>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <div class="form-group col-md-6">
+                                                            <label for="firstName-{{ user.UserID }}">First Name</label>
+                                                            <input type="text" class="form-control" id="firstName-{{ user.UserID }}" name="firstName" value="{{ user.FirstName or '' }}">
+                                                        </div>
+                                                        <div class="form-group col-md-6">
+                                                            <label for="lastName-{{ user.UserID }}">Last Name</label>
+                                                            <input type="text" class="form-control" id="lastName-{{ user.UserID }}" name="lastName" value="{{ user.LastName or '' }}">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>User Roles</label>
+                                                        <div class="role-checkboxes">
+                                                            {% for role in ['Admin', 'Staff', 'Member', 'Guest'] %}
+                                                                <div class="custom-control custom-checkbox">
+                                                                    <input type="checkbox" class="custom-control-input" id="role-{{ user.UserID }}-{{ role }}" name="roles" value="{{ role }}" 
+                                                                        {{ 'checked' if user.Roles and role in user.Roles.split(', ') else '' }}>
+                                                                    <label class="custom-control-label" for="role-{{ user.UserID }}-{{ role }}">{{ role }}</label>
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Reset Password Modal -->
+                                <div class="modal fade" id="resetPasswordModal-{{ user.UserID }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Reset Password: {{ user.Username }}</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <form action="{{ url_for('admin_reset_password', user_id=user.UserID) }}" method="post">
+                                                <div class="modal-body">
+                                                    <div class="form-group">
+                                                        <label for="newPassword-{{ user.UserID }}">New Password</label>
+                                                        <input type="password" class="form-control" id="newPassword-{{ user.UserID }}" name="newPassword" required>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="confirmPassword-{{ user.UserID }}">Confirm Password</label>
+                                                        <input type="password" class="form-control" id="confirmPassword-{{ user.UserID }}" name="confirmPassword" required>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-warning">Reset Password</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Toggle Status Modal -->
+                                <div class="modal fade" id="toggleStatusModal-{{ user.UserID }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">
+                                                    {{ 'Disable' if user.IsActive else 'Enable' }} User: {{ user.Username }}
+                                                </h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to {{ 'disable' if user.IsActive else 'enable' }} this user?</p>
+                                                {% if user.IsActive %}
+                                                    <div class="alert alert-warning">
+                                                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                        User will no longer be able to log in.
+                                                    </div>
+                                                {% else %}
+                                                    <div class="alert alert-info">
+                                                        <i class="fas fa-info-circle mr-2"></i>
+                                                        User will be able to log in again.
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('admin_toggle_user_status', user_id=user.UserID) }}" method="post">
+                                                    <button type="submit" class="btn {{ 'btn-danger' if user.IsActive else 'btn-success' }}">
+                                                        {{ 'Disable User' if user.IsActive else 'Enable User' }}
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New User</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ url_for('admin_add_user') }}" method="post">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="firstName">First Name</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="form-group">
+                            <label>User Roles</label>
+                            <div class="role-checkboxes">
+                                {% for role in ['Admin', 'Staff', 'Member', 'Guest'] %}
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="role-new-{{ role }}" name="roles" value="{{ role }}"
+                                            {{ 'checked' if role == 'Guest' else '' }}>
+                                        <label class="custom-control-label" for="role-new-{{ role }}">{{ role }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#usersTable').DataTable({
+                "order": [[0, "asc"]],
+                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+                "language": {
+                    "search": "Search users:",
+                    "lengthMenu": "Show _MENU_ users per page",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ users",
+                    "infoEmpty": "No users found",
+                    "infoFiltered": "(filtered from _MAX_ total users)"
+                }
+            });
+            
+            // Password confirmation validation
+            $('form').on('submit', function(e) {
+                const form = $(this);
+                const newPassword = form.find('input[name="newPassword"]').val();
+                const confirmPassword = form.find('input[name="confirmPassword"]').val();
+                
+                if (newPassword !== undefined && confirmPassword !== undefined) {
+                    if (newPassword !== confirmPassword) {
+                        e.preventDefault();
+                        alert('Passwords do not match!');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

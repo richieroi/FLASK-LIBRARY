@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Recovery - Library System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2ecc71;
+            --secondary-dark: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background-color: var(--dark-color);
+            color: white;
+            min-height: 100vh;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 250px;
+            overflow-y: auto;
+        }
+        
+        .sidebar .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar .logo i {
+            font-size: 48px;
+            color: var(--primary-color);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 0;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: white;
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: white;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar .user-info {
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9em;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            padding: 15px 20px;
+        }
+        
+        .backup-type-card {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .backup-type-card:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-5px);
+        }
+        
+        .backup-type-card.selected {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        }
+        
+        .backup-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .table th {
+            border-top: none;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .backup-status {
+            font-size: 0.8rem;
+            padding: 0.25em 0.6em;
+            border-radius: 50px;
+        }
+        
+        .alerts {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="alerts">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% if message %}
+            <div class="alert alert-{{ 'success' if status == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-book-reader"></i>
+            <h5 class="mt-2 mb-0">Library System</h5>
+            <p class="small text-muted mb-0">Administration</p>
+        </div>
+        
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('catalog') }}">
+                    <i class="fas fa-book"></i> Book Catalog
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_members') }}">
+                    <i class="fas fa-users"></i> Members
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_loans') }}">
+                    <i class="fas fa-clipboard-list"></i> Loans
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_users') }}">
+                    <i class="fas fa-user-shield"></i> User Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_roles') }}">
+                    <i class="fas fa-user-tag"></i> Roles
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_logs') }}">
+                    <i class="fas fa-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin_backup') }}">
+                    <i class="fas fa-database"></i> Backup & Recovery
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+        
+        <div class="user-info">
+            <div class="d-flex align-items-center">
+                <div class="mr-3">
+                    <i class="fas fa-user-circle fa-2x text-muted"></i>
+                </div>
+                <div>
+                    <small class="d-block text-muted">Logged in as</small>
+                    <span>{{ g.user.Username }}</span>
+                    <small class="d-block text-muted mt-1">
+                        {% for role in g.roles %}
+                            <span class="badge badge-secondary">{{ role }}</span>
+                        {% endfor %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="container-fluid">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent px-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Backup & Recovery</li>
+                </ol>
+            </nav>
+            
+            <h2 class="mb-4">Database Backup & Recovery</h2>
+            
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Create Database Backup
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">Create a backup of your library database. You can choose between different backup types based on your needs.</p>
+                            
+                            <form action="{{ url_for('admin_backup') }}" method="post">
+                                <div class="row">
+                                    <div class="col-md-4 mb-4">
+                                        <div class="backup-type-card" data-type="FULL" id="full-backup-card">
+                                            <div class="backup-icon">
+                                                <i class="fas fa-database"></i>
+                                            </div>
+                                            <h5>Full Backup</h5>
+                                            <p class="small text-muted">Complete database backup including all data and structure</p>
+                                            <input type="radio" name="backup_type" value="FULL" id="full-backup" checked style="display: none;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-4">
+                                        <div class="backup-type-card" data-type="DIFF" id="diff-backup-card">
+                                            <div class="backup-icon">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <h5>Differential</h5>
+                                            <p class="small text-muted">Backup changes since last full backup</p>
+                                            <input type="radio" name="backup_type" value="DIFF" id="diff-backup" style="display: none;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-4">
+                                        <div class="backup-type-card" data-type="LOG" id="log-backup-card">
+                                            <div class="backup-icon">
+                                                <i class="fas fa-file-alt"></i>
+                                            </div>
+                                            <h5>Log Backup</h5>
+                                            <p class="small text-muted">Transaction log backup for point-in-time recovery</p>
+                                            <input type="radio" name="backup_type" value="LOG" id="log-backup" style="display: none;">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    Backups will be stored in the <code>backups</code> folder of your application directory.
+                                </div>
+                                
+                                <div class="text-right">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-download mr-1"></i> Create Backup
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            Database Recovery
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">Restore the database from a previous backup. This will overwrite current data.</p>
+                            
+                            <form action="{{ url_for('admin_restore') }}" method="post">
+                                <div class="form-group">
+                                    <label for="backup_file">Select Backup File</label>
+                                    <select class="form-control" id="backup_file" name="backup_file" required>
+                                        <option value="">-- Select a backup file --</option>
+                                        {% for backup in backups %}
+                                            <option value="{{ backup.name }}">
+                                                {{ backup.name }} ({{ backup.size }}, {{ backup.date.strftime('%Y-%m-%d %H:%M') }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    <strong>Warning:</strong> Restoring will overwrite the current database. This operation cannot be undone.
+                                </div>
+                                
+                                <div class="text-right">
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to restore the database? Current data will be lost.')">
+                                        <i class="fas fa-upload mr-1"></i> Restore Database
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Backup History</span>
+                            <button class="btn btn-sm btn-outline-secondary" id="refreshBackups">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Backup File</th>
+                                            <th>Type</th>
+                                            <th>Size</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if backups %}
+                                            {% for backup in backups %}
+                                            <tr>
+                                                <td>{{ backup.name }}</td>
+                                                <td>
+                                                    {% if 'FULL' in backup.name %}
+                                                        <span class="badge badge-primary">Full</span>
+                                                    {% elif 'DIFF' in backup.name %}
+                                                        <span class="badge badge-info">Differential</span>
+                                                    {% elif 'LOG' in backup.name %}
+                                                        <span class="badge badge-secondary">Log</span>
+                                                    {% else %}
+                                                        <span class="badge badge-light">Unknown</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ backup.size }}</td>
+                                                <td>{{ backup.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="{{ url_for('admin_download_backup', filename=backup.name) }}" class="btn btn-outline-primary">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteBackup('{{ backup.name }}')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4 text-muted">No backup files found</td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            Backup Recommendations
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info mb-4">
+                                <h5><i class="fas fa-lightbulb mr-2"></i> Backup Strategy</h5>
+                                <p class="mb-0">A good backup strategy might include:</p>
+                                <ul class="mb-0">
+                                    <li>Daily differential backups</li>
+                                    <li>Weekly full backups</li>
+                                    <li>Hourly transaction log backups for critical systems</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h5>Storage Recommendations</h5>
+                                <p>Always store backups in multiple locations:</p>
+                                <ul>
+                                    <li>Local storage (quick recovery)</li>
+                                    <li>Network storage</li>
+                                    <li>Off-site or cloud storage (disaster recovery)</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h5>Testing</h5>
+                                <p class="mb-0">Regularly test your backups by performing restore operations to ensure they work correctly when needed.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Backup Confirmation Modal -->
+    <div class="modal fade" id="deleteBackupModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this backup file?</p>
+                    <p class="text-danger"><strong>Warning:</strong> This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <form id="deleteBackupForm" action="{{ url_for('admin_delete_backup') }}" method="post">
+                        <input type="hidden" id="backup_filename" name="filename" value="">
+                        <button type="submit" class="btn btn-danger">Delete Backup</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Backup type selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const backupCards = document.querySelectorAll('.backup-type-card');
+            
+            backupCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Remove 'selected' class from all cards
+                    backupCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // Add 'selected' class to clicked card
+                    this.classList.add('selected');
+                    
+                    // Check the corresponding radio button
+                    const type = this.getAttribute('data-type');
+                    document.getElementById(type.toLowerCase() + '-backup').checked = true;
+                });
+            });
+            
+            // Select the FULL backup by default
+            document.getElementById('full-backup-card').classList.add('selected');
+            
+            // Refresh button functionality
+            document.getElementById('refreshBackups').addEventListener('click', function() {
+                window.location.reload();
+            });
+        });
+        
+        // Delete backup confirmation
+        function confirmDeleteBackup(filename) {
+            document.getElementById('backup_filename').value = filename;
+            $('#deleteBackupModal').modal('show');
+        }
+    </script>
+</body>
+</html>

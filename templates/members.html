@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Members - Library System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #5E4B56; /* Warm purple-brown */
+            --secondary-color: #8E7D73; /* Muted taupe */
+            --accent-color: #2E5077; /* Deep blue */
+            --light-color: #F9F7F4; /* Off-white/cream */
+            --dark-color: #34302D; /* Deep charcoal */
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-color);
+            color: #333;
+        }
+        
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            font-family: 'Georgia', serif;
+        }
+        
+        .navbar-brand i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .nav-link {
+            font-weight: 500;
+        }
+        
+        .page-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+        }
+        
+        .page-title {
+            font-family: 'Georgia', serif;
+            font-weight: 700;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            padding: 10px 25px;
+            font-weight: 500;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1D3F65;
+            border-color: #1D3F65;
+        }
+        
+        .btn-outline-primary {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            font-weight: 500;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 15px 20px;
+        }
+        
+        .table {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .table thead th {
+            border-bottom: none;
+            background-color: rgba(94, 75, 86, 0.1);
+            color: var(--primary-color);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            padding: 15px;
+        }
+        
+        .table td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            padding: 15px 20px;
+        }
+        
+        .modal-content {
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom: none;
+        }
+        
+        .modal-header .close {
+            color: white;
+            text-shadow: none;
+        }
+        
+        .form-group label {
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .form-control {
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+        }
+        
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(46, 80, 119, 0.25);
+        }
+        
+        .badge {
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 30px;
+        }
+        
+        .member-actions .btn {
+            padding: 5px 10px;
+            margin: 0 3px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-book-reader fa-lg"></i>
+                Alexandria Library
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('catalog') }}">Catalog</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('list_members') }}">Members</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('list_loans') }}">Loans</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1 class="page-title">Library Members</h1>
+            <p class="lead">Manage your library's membership database</p>
+        </div>
+    </header>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-success alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <button class="btn btn-primary" data-toggle="modal" data-target="#addMemberModal">
+                    <i class="fas fa-plus mr-1"></i> Add New Member
+                </button>
+            </div>
+            <div>
+                <a href="{{ url_for('catalog') }}" class="btn btn-outline-primary mr-2">
+                    <i class="fas fa-book mr-1"></i> View Books
+                </a>
+                <a href="{{ url_for('list_loans') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-clipboard-list mr-1"></i> View Loans
+                </a>
+            </div>
+        </div>
+        
+        <div class="card mb-5">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0" id="membersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Membership</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in members %}
+                        <tr>
+                            <td>{{ member.MemberID }}</td>
+                            <td>{{ member.FirstName }} {{ member.LastName }}</td>
+                            <td>{{ member.Email }}</td>
+                            <td>
+                                {% if member.Status == 'Active' %}
+                                    <span class="badge badge-success">Active</span>
+                                {% elif member.Status == 'Expired' %}
+                                    <span class="badge badge-danger">Expired</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">{{ member.Status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if member.MembershipExpiry %}Expires: {{ member.MembershipExpiry.strftime('%b %d, %Y') }}{% endif %}</td>
+                            <td class="member-actions">
+                                <button class="btn btn-sm btn-info view-member" data-id="{{ member.MemberID }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary edit-member" data-id="{{ member.MemberID }}" data-name="{{ member.FullName }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary view-loans" data-id="{{ member.MemberID }}" data-name="{{ member.FullName }}">
+                                    <i class="fas fa-book"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div class="modal fade" id="addMemberModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Member</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ url_for('add_member') }}" method="post">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="firstName">First Name</label>
+                                    <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="lastName">Last Name</label>
+                                    <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="phone">Phone Number</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="address">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="expiryDate">Membership Expiry Date</label>
+                                    <input type="date" class="form-control" id="expiryDate" name="expiryDate">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Member</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Member Modal -->
+    <div class="modal fade" id="editMemberModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Member</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="editMemberForm" method="post">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="editFirstName">First Name</label>
+                                    <input type="text" class="form-control" id="editFirstName" name="firstName" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="editLastName">Last Name</label>
+                                    <input type="text" class="form-control" id="editLastName" name="lastName" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="editEmail">Email</label>
+                                    <input type="email" class="form-control" id="editEmail" name="email" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="editPhone">Phone Number</label>
+                                    <input type="tel" class="form-control" id="editPhone" name="phone">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="editAddress">Address</label>
+                                    <textarea class="form-control" id="editAddress" name="address" rows="3"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="editExpiryDate">Membership Expiry Date</label>
+                                    <input type="date" class="form-control" id="editExpiryDate" name="expiryDate">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="editStatus">Status</label>
+                                    <select class="form-control" id="editStatus" name="status">
+                                        <option value="Active">Active</option>
+                                        <option value="Inactive">Inactive</option>
+                                        <option value="Expired">Expired</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Loans Modal -->
+    <div class="modal fade" id="memberLoansModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Loans for <span id="memberName"></span></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table" id="memberLoansTable">
+                            <thead>
+                                <tr>
+                                    <th>Book Title</th>
+                                    <th>Loan Date</th>
+                                    <th>Due Date</th>
+                                    <th>Returned</th>
+                                    <th>Status</th>
+                                    <th>Fine</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loansTableBody">
+                                <!-- Rows will be populated via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#membersTable').DataTable({
+                "order": [[ 0, "asc" ]],
+                "pageLength": 10,
+                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]]
+            });
+            
+            // Set default expiry date (1 year from now)
+            var today = new Date();
+            var nextYear = new Date();
+            nextYear.setFullYear(today.getFullYear() + 1);
+            
+            // Format date as YYYY-MM-DD
+            var formattedDate = nextYear.toISOString().split('T')[0];
+            $('#expiryDate').val(formattedDate);
+            
+            // Handle edit button click
+            $('.edit-member').click(function() {
+                var memberId = $(this).data('id');
+                
+                // Fetch member data via AJAX
+                $.ajax({
+                    url: '/api/members/' + memberId,
+                    method: 'GET',
+                    success: function(data) {
+                        // Populate form fields
+                        $('#editFirstName').val(data.FirstName);
+                        $('#editLastName').val(data.LastName);
+                        $('#editEmail').val(data.Email);
+                        $('#editPhone').val(data.Phone);
+                        $('#editAddress').val(data.Address);
+                        $('#editStatus').val(data.Status);
+                        
+                        // Format expiry date
+                        if (data.MembershipExpiry) {
+                            var expiryDate = new Date(data.MembershipExpiry);
+                            $('#editExpiryDate').val(expiryDate.toISOString().split('T')[0]);
+                        }
+                        
+                        // Set form action URL
+                        $('#editMemberForm').attr('action', '/edit_member/' + memberId);
+                        
+                        // Show the modal
+                        $('#editMemberModal').modal('show');
+                    },
+                    error: function(error) {
+                        console.error('Error fetching member data:', error);
+                        alert('Could not fetch member details. Please try again.');
+                    }
+                });
+            });
+            
+            // Handle view loans button click
+            $('.view-loans').click(function() {
+                var memberId = $(this).data('id');
+                var memberName = $(this).data('name');
+                
+                $('#memberName').text(memberName);
+                
+                // Fetch loan data via AJAX
+                $.ajax({
+                    url: '/api/members/' + memberId + '/loans',
+                    method: 'GET',
+                    success: function(data) {
+                        var tableBody = $('#loansTableBody');
+                        tableBody.empty();
+                        
+                        if (data.length === 0) {
+                            tableBody.append('<tr><td colspan="6" class="text-center">No loans found for this member.</td></tr>');
+                        } else {
+                            // Populate table with loan data
+                            $.each(data, function(index, loan) {
+                                var row = '<tr>' +
+                                    '<td>' + loan.BookTitle + '</td>' +
+                                    '<td>' + new Date(loan.LoanDate).toLocaleDateString() + '</td>' +
+                                    '<td>' + new Date(loan.DueDate).toLocaleDateString() + '</td>' +
+                                    '<td>' + (loan.ReturnDate ? new Date(loan.ReturnDate).toLocaleDateString() : '-') + '</td>' +
+                                    '<td><span class="badge badge-' + 
+                                        (loan.Status === 'Borrowed' ? 'warning' : 
+                                         loan.Status === 'Returned' ? 'success' : 
+                                         loan.Status === 'Overdue' ? 'danger' : 'secondary') + 
+                                        '">' + loan.Status + '</span></td>' +
+                                    '<td>$' + loan.FineAmount.toFixed(2) + '</td>' +
+                                '</tr>';
+                                tableBody.append(row);
+                            });
+                        }
+                        
+                        // Show the modal
+                        $('#memberLoansModal').modal('show');
+                    },
+                    error: function(error) {
+                        console.error('Error fetching loan data:', error);
+                        alert('Could not fetch loan details. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

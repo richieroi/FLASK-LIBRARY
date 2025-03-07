@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #5E4B56; /* Warm purple-brown */
+            --secondary-color: #8E7D73; /* Muted taupe */
+            --accent-color: #2E5077; /* Deep blue */
+            --light-color: #F9F7F4; /* Off-white/cream */
+            --dark-color: #34302D; /* Deep charcoal */
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-color);
+            color: #333;
+        }
+        
+        .header {
+            background-color: var(--dark-color);
+            padding: 80px 0;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(52, 48, 45, 0.85);
+            z-index: 1;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .header h1 {
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 3rem;
+            font-family: 'Georgia', serif;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto 30px auto;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            padding: 10px 25px;
+            font-weight: 500;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1D3F65;
+            border-color: #1D3F65;
+        }
+        
+        .btn-outline-light {
+            padding: 10px 25px;
+            font-weight: 500;
+        }
+        
+        .features-section {
+            padding: 80px 0;
+        }
+        
+        .feature-box {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+        
+        .feature-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-box .icon {
+            background-color: var(--primary-color);
+            color: white;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .feature-box .icon i {
+            font-size: 28px;
+        }
+        
+        .feature-box h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--dark-color);
+            font-family: 'Georgia', serif;
+        }
+        
+        .books-section {
+            background-color: #EFECE7;
+            padding: 80px 0;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+            font-family: 'Georgia', serif;
+        }
+        
+        .section-title::after {
+            content: "";
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+        
+        .book-card {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+            height: 100%;
+            border: none;
+            position: relative;
+        }
+        
+        .book-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .book-card .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .book-card .card-body {
+            padding: 20px;
+        }
+        
+        .book-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(255,255,255,0.9);
+        }
+        
+        .book-badge {
+            color: white;
+            background-color: var (--secondary-color);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        
+        .author-text {
+            color: #666;
+            font-style: italic;
+        }
+        
+        .cta-section {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 40px 0;
+        }
+        
+        .footer a {
+            color: rgba(255, 255, 255, 0.7);
+            transition: color 0.3s ease;
+        }
+        
+        .footer a:hover {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            font-family: 'Georgia', serif;
+        }
+        
+        .navbar-brand i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .nav-link {
+            font-weight: 500;
+        }
+        
+        .alerts {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .stats-counter {
+            display: flex;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .counter-item {
+            flex: 1;
+            padding: 20px;
+        }
+        
+        .counter-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--accent-color);
+            font-family: 'Georgia', serif;
+        }
+        
+        .counter-label {
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 50px 0;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="alerts">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-book-reader fa-lg"></i>
+                Alexandria Library
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    {% if g.user %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('catalog') }}">Catalog</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('catalog') }}">Browse Catalog</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-primary text-white ml-3" href="{{ url_for('auth.register') }}">Sign Up</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <header class="header text-center">
+        <div class="container header-content">
+            <h1>Your Gateway to Knowledge</h1>
+            <p>Discover a world of books, explore new ideas, and efficiently manage your library's resources with our comprehensive library management system.</p>
+            <div>
+                {% if g.user %}
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Get Started</a>
+                    <a href="{{ url_for('catalog') }}" class="btn btn-outline-light ml-3">Browse Our Collection</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Library Stats -->
+    <div class="container mt-5 mb-4">
+        <div class="stats-counter">
+            <div class="counter-item">
+                <div class="counter-number">15,000+</div>
+                <div class="counter-label">Books</div>
+            </div>
+            <div class="counter-item">
+                <div class="counter-number">5,000+</div>
+                <div class="counter-label">Members</div>
+            </div>
+            <div class="counter-item">
+                <div class="counter-number">250+</div>
+                <div class="counter-label">Daily Visitors</div>
+            </div>
+            <div class="counter-item">
+                <div class="counter-number">99%</                <div class="counter-label">Satisfaction</div>
+            </div>
+        </div>
+    </div>
+
+    <section class="features-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Library Services</h2>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h3>Advanced Catalog</h3>
+                        <p>Find any book instantly with our powerful search system. Browse by author, genre, publication date, or availability status.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h3>Easy Reservations</h3>
+                        <p>Reserve books in advance, manage due dates, and receive timely reminders before returns are due.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <h3>Member Profiles</h3>
+                        <p>Create your personal reading profile, track your borrowing history, and receive personalized recommendations.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <h3>Reading Programs</h3>
+                        <p>Join reading circles, participate in literary events, and engage with our community of book lovers.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3>Mobile Friendly</h3>
+                        <p>Access your library account, renew books, and search the catalog from any device, anywhere, anytime.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3>Reading Analytics</h3>
+                        <p>Visualize your reading habits, set reading goals, and track your literary journey throughout the year.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="books-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Featured Books</h2>
+            </div>
+            <div class="row">
+                {% if featured_books %}
+                    {% for book in featured_books %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="book-card h-100">
+                                <div class="card-header">
+                                    {{ book.Title }}
+                                </div>
+                                {% if book.Status == 'Available' %}
+                                    <span class="book-status text-success">Available</span>
+                                {% else %}
+                                    <span class="book-status text-danger">{{ book.Status }}</span>
+                                {% endif %}
+                                <div class="card-body">
+                                    <span class="book-badge">{{ book.CategoryName or 'Fiction' }}</span>
+                                    <p class="author-text">by {{ book.Author }}</p>
+                                    <p><strong>Publication Year:</strong> {{ book.PublicationYear }}</p>
+                                    {% if book.Publisher %}<p><strong>Publisher:</strong> {{ book.Publisher }}</p>{% endif %}
+                                    <div class="text-right mt-3">
+                                        <a href="{{ url_for('view_book', book_id=book.BookID) }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center">
+                        <p>No featured books at the moment. Our librarians are carefully selecting titles to showcase here. Check back later!</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="text-center mt-4">
+                <a href="{{ url_for('catalog') }}" class="btn btn-primary">Explore Full Collection</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section text-center">
+        <div class="container">
+            <h2>Join Our Library Community</h2>
+            <p class="mb-4">Create an account today to access our complete collection, reserve books, and enjoy all member benefits.</p>
+            {% if g.user %}
+                <a href="{{ url_for('dashboard') }}" class="btn btn-lg btn-light">Go to Your Dashboard</a>
+            {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-lg btn-light">Become a Member</a>
+                <p class="mt-3 text-light">Already a member? <a href="{{ url_for('auth.login') }}" class="text-white"><u>Login here</u></a></p>
+            {% endif %}
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Alexandria Library Management System</h5>
+                    <p>Supporting communities through the power of reading and access to information.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('index') }}">Home</a></li>
+                        <li><a href="{{ url_for('catalog') }}">Books</a></li>
+                        <li><a href="#">Library Events</a></li>
+                        <li><a href="#">About Us</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Contact</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-envelope mr-2"></i>library@alexandria.com</li>
+                        <li><i class="fas fa-phone mr-2"></i>(555) 123-4567</li>
+                        <li><i class="fas fa-map-marker-alt mr-2"></i>101 Library Avenue, Booktown</li>
+                        <li><i class="fas fa-clock mr-2"></i>Mon-Sat: 9AM - 8PM</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="mt-4 mb-4" style="border-color: rgba(255,255,255,0.1);">
+            <div class="text-center">
+                <p class="mb-0">&copy; {{ now.year if now else 2023 }} Alexandria Library Management System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

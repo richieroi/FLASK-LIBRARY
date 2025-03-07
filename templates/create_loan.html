@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Out Book - Library System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('list_loans') }}">Loans</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Check Out Book</li>
+            </ol>
+        </nav>
+        
+        <h2>Check Out Book</h2>
+        
+        <form method="post">
+            <div class="form-group">
+                <label for="bookId">Book</label>
+                <select class="form-control" id="bookId" name="bookId" required>
+                    <option value="">Select a book...</option>
+                    {% for book in books %}
+                    <option value="{{ book.BookID }}" {% if request.args.get('book_id')|int == book.BookID %}selected{% endif %}>
+                        {{ book.Title }} ({{ book.Author }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="memberId">Member</label>
+                <select class="form-control" id="memberId" name="memberId" required>
+                    <option value="">Select a member...</option>
+                    {% for member in members %}
+                    <option value="{{ member.MemberID }}" {% if request.args.get('member_id')|int == member.MemberID %}selected{% endif %}>
+                        {{ member.FirstName }} {{ member.LastName }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="checkoutDate">Checkout Date</label>
+                <input type="text" class="form-control datepicker" id="checkoutDate" name="checkoutDate" required>
+            </div>
+            <div class="form-group">
+                <label for="dueDate">Due Date</label>
+                <input type="text" class="form-control datepicker" id="dueDate" name="dueDate" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Check Out</button>
+            <a href="{{ url_for('list_loans') }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize today's date
+            const today = new Date();
+            let dd = String(today.getDate()).padStart(2, '0');
+            let mm = String(today.getMonth() + 1).padStart(2, '0');
+            let yyyy = today.getFullYear();
+            const todayStr = yyyy + '-' + mm + '-' + dd;
+            
+            // Set default checkout date to today
+            document.getElementById('checkoutDate').value = todayStr;
+            
+            // Calculate default due date (today + 14 days)
+            const dueDate = new Date(today);
+            dueDate.setDate(dueDate.getDate() + 14);
+            dd = String(dueDate.getDate()).padStart(2, '0');
+            mm = String(dueDate.getMonth() + 1).padStart(2, '0');
+            yyyy = dueDate.getFullYear();
+            const dueDateStr = yyyy + '-' + mm + '-' + dd;
+            document.getElementById('dueDate').value = dueDateStr;
+            
+            // Initialize date pickers
+            flatpickr('.datepicker', {
+                dateFormat: 'Y-m-d',
+                allowInput: true
+            });
+        });
+    </script>
+</body>
+</html>

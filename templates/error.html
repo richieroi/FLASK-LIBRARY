@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Error - Library System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="alert alert-danger">
+            <h3>Error</h3>
+            <p>{{ error }}</p>
+            
+            <h4 class="mt-4">Troubleshooting Steps:</h4>
+            <ol>
+                <li>Verify SQL Server is installed and running on your machine</li>
+                <li>Check the connection string in <code>config.py</code> - try uncommenting different options</li>
+                <li>If using a named instance (like SQLEXPRESS), make sure the name is correct</li>
+                <li>Run <code>sqlcmd -L</code> in a command prompt to list available SQL Server instances</li>
+                <li>Try creating the database manually by running <code>setup_database.sql</code> in SQL Server Management Studio</li>
+            </ol>
+            
+            <div class="mt-4">
+                <h5>Technical Details:</h5>
+                <pre class="bg-light p-3">{{ details }}</pre>
+            </div>
+            
+            <a href="/" class="btn btn-primary mt-3">Try Again</a>
+        </div>
+    </div>
+</body>
+</html>

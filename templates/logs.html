@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Logs - Library System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2ecc71;
+            --secondary-dark: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background-color: var(--dark-color);
+            color: white;
+            min-height: 100vh;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 250px;
+            overflow-y: auto;
+        }
+        
+        .sidebar .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar .logo i {
+            font-size: 48px;
+            color: var(--primary-color);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 0;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: white;
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: white;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar .user-info {
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9em;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            padding: 15px 20px;
+        }
+        
+        .table th {
+            border-top: none;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .action-badge {
+            font-size: 0.75rem;
+            padding: 0.25em 0.6em;
+        }
+        
+        .action-INSERT {
+            background-color: var(--secondary-color);
+        }
+        
+        .action-UPDATE {
+            background-color: var(--warning-color);
+        }
+        
+        .action-DELETE {
+            background-color: var(--danger-color);
+        }
+        
+        .action-ERROR {
+            background-color: #e74c3c;
+        }
+        
+        .action-LOGIN {
+            background-color: var(--primary-color);
+        }
+        
+        .action-BACKUP {
+            background-color: #9b59b6;
+        }
+        
+        .filter-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .actions-list .badge {
+            margin-right: 5px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        
+        .actions-list .badge:hover {
+            opacity: 0.8;
+        }
+        
+        .alerts {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="alerts">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-book-reader"></i>
+            <h5 class="mt-2 mb-0">Library System</h5>
+            <p class="small text-muted mb-0">Administration</p>
+        </div>
+        
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('catalog') }}">
+                    <i class="fas fa-book"></i> Book Catalog
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_members') }}">
+                    <i class="fas fa-users"></i> Members
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_loans') }}">
+                    <i class="fas fa-clipboard-list"></i> Loans
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_users') }}">
+                    <i class="fas fa-user-shield"></i> User Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_roles') }}">
+                    <i class="fas fa-user-tag"></i> Roles
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin_logs') }}">
+                    <i class="fas fa-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_backup') }}">
+                    <i class="fas fa-database"></i> Backup & Recovery
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+        
+        <div class="user-info">
+            <div class="d-flex align-items-center">
+                <div class="mr-3">
+                    <i class="fas fa-user-circle fa-2x text-muted"></i>
+                </div>
+                <div>
+                    <small class="d-block text-muted">Logged in as</small>
+                    <span>{{ g.user.Username }}</span>
+                    <small class="d-block text-muted mt-1">
+                        {% for role in g.roles %}
+                            <span class="badge badge-secondary">{{ role }}</span>
+                        {% endfor %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="container-fluid">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent px-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Activity Logs</li>
+                </ol>
+            </nav>
+            
+            <h2 class="mb-4">Activity Logs</h2>
+            
+            <div class="filter-card">
+                <form action="{{ url_for('admin_logs') }}" method="GET" class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="action">Action</label>
+                        <select class="form-control" id="action" name="action">
+                            <option value="">All Actions</option>
+                            {% for action_item in actions %}
+                                <option value="{{ action_item.Action }}" {% if selected_action == action_item.Action %}selected{% endif %}>
+                                    {{ action_item.Action }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="table">Table</label>
+                        <select class="form-control" id="table" name="table">
+                            <option value="">All Tables</option>
+                            {% for table_item in tables %}
+                                <option value="{{ table_item.TableName }}" {% if selected_table == table_item.TableName %}selected{% endif %}>
+                                    {{ table_item.TableName }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="user_id">User</label>
+                        <select class="form-control" id="user_id" name="user_id">
+                            <option value="">All Users</option>
+                            {% for user in users %}
+                                <option value="{{ user.UserID }}" {% if selected_user_id == user.UserID %}selected{% endif %}>
+                                    {{ user.Username }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2 mb-3">
+                        <label for="days">Time Range</label>
+                        <select class="form-control" id="days" name="days">
+                            <option value="1" {% if selected_days == 1 %}selected{% endif %}>Last 24 hours</option>
+                            <option value="7" {% if selected_days == 7 %}selected{% endif %}>Last 7 days</option>
+                            <option value="30" {% if selected_days == 30 %}selected{% endif %}>Last 30 days</option>
+                            <option value="90" {% if selected_days == 90 %}selected{% endif %}>Last 90 days</option>
+                            <option value="365" {% if selected_days == 365 %}selected{% endif %}>Last year</option>
+                            <option value="" {% if not selected_days %}selected{% endif %}>All time</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-1 mb-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+                
+                <div class="mt-3">
+                    <label>Quick Filters:</label>
+                    <div class="actions-list">
+                        <a href="{{ url_for('admin_logs', action='LOGIN') }}" class="badge badge-pill action-badge action-LOGIN">LOGINs</a>
+                        <a href="{{ url_for('admin_logs', action='INSERT') }}" class="badge badge-pill action-badge action-INSERT">INSERTs</a>
+                        <a href="{{ url_for('admin_logs', action='UPDATE') }}" class="badge badge-pill action-badge action-UPDATE">UPDATEs</a>
+                        <a href="{{ url_for('admin_logs', action='DELETE') }}" class="badge badge-pill action-badge action-DELETE">DELETEs</a>
+                        <a href="{{ url_for('admin_logs', action='ERROR') }}" class="badge badge-pill action-badge action-ERROR">ERRORs</a>
+                        <a href="{{ url_for('admin_logs', table='Books') }}" class="badge badge-pill badge-secondary">Books</a>
+                        <a href="{{ url_for('admin_logs', table='Members') }}" class="badge badge-pill badge-secondary">Members</a>
+                        <a href="{{ url_for('admin_logs', table='Loans') }}" class="badge badge-pill badge-secondary">Loans</a>
+                        <a href="{{ url_for('admin_logs', table='Users_UCN001') }}" class="badge badge-pill badge-secondary">Users</a>
+                        <a href="{{ url_for('admin_logs', days='1') }}" class="badge badge-pill badge-info">Today</a>
+                        <a href="{{ url_for('admin_logs') }}" class="badge badge-pill badge-light">Reset All</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    Activity Log Entries
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="logsTable">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Table</th>
+                                    <th>Record ID</th>
+                                    <th>Details</th>
+                                    <th>IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr>
+                                    <td>{{ log.ChangedAt.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ log.Username or 'System' }}</td>
+                                    <td>
+                                        <span class="badge badge-pill action-badge action-{{ log.Action }}">{{ log.Action }}</span>
+                                    </td>
+                                    <td>{{ log.TableName }}</td>
+                                    <td>{{ log.RecordID or '-' }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" data-toggle="modal" data-target="#logDetailsModal-{{ log.LogID }}">
+                                            View Details
+                                        </button>
+                                    </td>
+                                    <td>{{ log.IPAddress or '-' }}</td>
+                                </tr>
+                                
+                                <!-- Log Details Modal -->
+                                <div class="modal fade" id="logDetailsModal-{{ log.LogID }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Log Details</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <h6>Basic Information</h6>
+                                                        <table class="table table-sm">
+                                                            <tr>
+                                                                <th>Log ID</th>
+                                                                <td>{{ log.LogID }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Time</th>
+                                                                <td>{{ log.ChangedAt.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>User</th>
+                                                                <td>{{ log.Username or 'System' }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Action</th>
+                                                                <td>{{ log.Action }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Table</th>
+                                                                <td>{{ log.TableName }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Record ID</th>
+                                                                <td>{{ log.RecordID or 'N/A' }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>IP Address</th>
+                                                                <td>{{ log.IPAddress or 'N/A' }}</td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h6>Changes</h6>
+                                                        {% if log.Action == 'INSERT' %}
+                                                            <div class="card bg-light">
+                                                                <div class="card-header">New Values</div>
+                                                                <div class="card-body">
+                                                                    <pre class="mb-0">{{ log.NewValues or 'No details available' }}</pre>
+                                                                </div>
+                                                            </div>
+                                                        {% elif log.Action == 'DELETE' %}
+                                                            <div class="card bg-light">
+                                                                <div class="card-header">Deleted Values</div>
+                                                                <div class="card-body">
+                                                                    <pre class="mb-0">{{ log.OldValues or 'No details available' }}</pre>
+                                                                </div>
+                                                            </div>
+                                                        {% elif log.Action == 'UPDATE' %}
+                                                            <div class="card bg-light mb-3">
+                                                                <div class="card-header">Old Values</div>
+                                                                <div class="card-body">
+                                                                    <pre class="mb-0">{{ log.OldValues or 'No details available' }}</pre>
+                                                                </div>
+                                                            </div>
+                                                            <div class="card bg-light">
+                                                                <div class="card-header">New Values</div>
+                                                                <div class="card-body">
+                                                                    <pre class="mb-0">{{ log.NewValues or 'No details available' }}</pre>
+                                                                </div>
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="card bg-light">
+                                                                <div class="card-header">Details</div>
+                                                                <div class="card-body">
+                                                                    <pre class="mb-0">{{ log.OldValues or log.NewValues or 'No details available' }}</pre>
+                                                                </div>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if not logs %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-search text-muted fa-3x mb-3"></i>
+                        <h4>No log entries found</h4>
+                        <p class="text-muted">Try adjusting your filters or check back later.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#logsTable').DataTable({
+                "order": [[0, "desc"]],
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                "language": {
+                    "search": "Search logs:",
+                    "lengthMenu": "Show _MENU_ logs per page",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ logs",
+                    "infoEmpty": "No logs found",
+                    "infoFiltered": "(filtered from _MAX_ total logs)"
+                }
+            });
+        });
+    </script>
+</body>
+</html>

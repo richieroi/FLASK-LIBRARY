@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ book.Title }} - Library Management System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2ecc71;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background-color: var(--dark-color);
+            color: white;
+            min-height: 100vh;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 250px;
+            overflow-y: auto;
+        }
+        
+        .sidebar .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar .logo i {
+            font-size: 48px;
+            color: var(--primary-color);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 0;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: white;
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: white;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .book-details {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .book-cover {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .book-cover i {
+            font-size: 100px;
+            color: #ccc;
+        }
+        
+        .book-info h1 {
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .book-info .author {
+            color: #666;
+            font-size: 1.25rem;
+            margin-bottom: 20px;
+        }
+        
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 8px 15px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .book-meta {
+            margin-top: 25px;
+        }
+        
+        .book-meta p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        
+        .book-category {
+            background-color: #f0f0f0;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        
+        .alerts {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .history-table th {
+            border-top: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="alerts">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-book-reader"></i>
+            <h5 class="mt-2 mb-0">Library System</h5>
+            <p class="small text-muted mb-0">Management Dashboard</p>
+        </div>
+        
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('catalog') }}">
+                    <i class="fas fa-book"></i> Book Catalog
+                </a>
+            </li>
+            {% if g.is_staff %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_members') }}">
+                    <i class="fas fa-users"></i> Members
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_loans') }}">
+                    <i class="fas fa-clipboard-list"></i> Loans
+                </a>
+            </li>
+            {% if g.is_admin %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_users') }}">
+                    <i class="fas fa-user-shield"></i> User Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_logs') }}">
+                    <i class="fas fa-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_backup') }}">
+                    <i class="fas fa-database"></i> Backup & Recovery
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="container-fluid">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent px-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('catalog') }}">Book Catalog</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ book.Title }}</li>
+                </ol>
+            </nav>
+            
+            <div class="book-details">
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="book-cover">
+                            <i class="fas fa-book"></i>
+                            
+                            {% if book.Status == 'Available' %}
+                            <div class="status-badge badge badge-success position-absolute" style="top: 15px; right: 15px;">
+                                {{ book.Status }}
+                            </div>
+                            {% elif book.Status == 'Checked Out' %}
+                            <div class="status-badge badge badge-danger position-absolute" style="top: 15px; right: 15px;">
+                                {{ book.Status }}
+                            </div>
+                            {% else %}
+                            <div class="status-badge badge badge-secondary position-absolute" style="top: 15px; right: 15px;">
+                                {{ book.Status }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h5>Categories</h5>
+                            <div>
+                                {% if book.CategoryName %}
+                                <span class="book-category">{{ book.CategoryName }}</span>
+                                {% endif %}
+                                
+                                {% if additional_categories %}
+                                    {% for category in additional_categories %}
+                                    <span class="book-category">{{ category.CategoryName }}</span>
+                                    {% endfor %}
+                                {% endif %}
+                                
+                                {% if not book.CategoryName and not additional_categories %}
+                                <span class="text-muted">No categories assigned</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="book-info">
+                            <h1>{{ book.Title }}</h1>
+                            <p class="author">By {{ book.Author }}</p>
+                            
+                            <div class="book-meta">
+                                <p><strong>ISBN:</strong> {{ book.ISBN }}</p>
+                                <p><strong>Publication Year:</strong> {{ book.PublicationYear }}</p>
+                                {% if book.Publisher %}
+                                <p><strong>Publisher:</strong> {{ book.Publisher }}</p>
+                                {% endif %}
+                                {% if book.ShelfLocation %}
+                                <p><strong>Shelf Location:</strong> {{ book.ShelfLocation }}</p>
+                                {% endif %}
+                                <p>
+                                    <strong>Copies:</strong> 
+                                    {{ book.AvailableCopies }} available of {{ book.TotalCopies }} total
+                                </p>
+                            </div>
+                            
+                            <div class="mt-4">
+                                {% if g.is_staff %}
+                                <a href="{{ url_for('edit_book', book_id=book.BookID) }}" class="btn btn-warning">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                {% endif %}
+                                
+                                {% if g.is_admin %}
+                                <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                                {% endif %}
+                                
+                                <a href="{{ url_for('catalog') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Catalog
+                                </a>
+                                
+                                {% if book.Status == 'Available' and g.is_staff %}
+                                <a href="{{ url_for('create_loan') }}?book_id={{ book.BookID }}" class="btn btn-primary">
+                                    <i class="fas fa-clipboard-check"></i> Check Out
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if g.is_staff and loan_history %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Loan History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover history-table">
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Checked Out</th>
+                                    <th>Due Date</th>
+                                    <th>Returned</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in loan_history %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('view_member', member_id=loan.MemberID) }}">
+                                            {{ loan.MemberName }}
+                                        </a>
+                                    </td>
+                                    <td>{{ loan.CheckoutDate }}</td>
+                                    <td>{{ loan.DueDate }}</td>
+                                    <td>{{ loan.ReturnedDate or '-' }}</td>
+                                    <td>
+                                        {% if loan.ReturnedDate %}
+                                        <span class="badge badge-success">Returned</span>
+                                        {% elif loan.DueDate < now|default('2099-12-31') %}
+                                        <span class="badge badge-danger">Overdue</span>
+                                        {% else %}
+                                        <span class="badge badge-warning">Checked Out</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete "<strong>{{ book.Title }}</strong>"?</p>
+                    <p class="text-danger"><small>This action cannot be undone.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <form method="post" action="{{ url_for('delete_book', book_id=book.BookID) }}">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

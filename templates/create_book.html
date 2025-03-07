@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Book - Library Management System</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            background-color: var(--light-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background-color: var(--dark-color);
+            color: white;
+            min-height: 100vh;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 250px;
+            overflow-y: auto;
+        }
+        
+        .sidebar .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar .logo i {
+            font-size: 48px;
+            color: var(--primary-color);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 0;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: white;
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: white;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-section-title {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .select2-container--default .select2-selection--multiple {
+            border-color: #ced4da;
+            min-height: calc(1.5em + .75rem + 2px);
+        }
+        
+        .select2-container--default.select2-container--focus .select2-selection--multiple {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+        
+        .alerts {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="alerts">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-book-reader"></i>
+            <h5 class="mt-2 mb-0">Library System</h5>
+            <p class="small text-muted mb-0">Management Dashboard</p>
+        </div>
+        
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('catalog') }}">
+                    <i class="fas fa-book"></i> Book Catalog
+                </a>
+            </li>
+            {% if g.is_staff %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_members') }}">
+                    <i class="fas fa-users"></i> Members
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_loans') }}">
+                    <i class="fas fa-clipboard-list"></i> Loans
+                </a>
+            </li>
+            {% if g.is_admin %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_users') }}">
+                    <i class="fas fa-user-shield"></i> User Management
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_logs') }}">
+                    <i class="fas fa-history"></i> Activity Logs
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_backup') }}">
+                    <i class="fas fa-database"></i> Backup & Recovery
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="container-fluid">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent px-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('catalog') }}">Book Catalog</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Add New Book</li>
+                </ol>
+            </nav>
+            
+            <h2 class="mb-4">Add New Book</h2>
+            
+            <div class="card">
+                <div class="card-header">Book Information</div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="form-section">
+                            <h5 class="form-section-title">Basic Information</h5>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="title">Title <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="title" name="title" required>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="author">Author <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="author" name="author" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="isbn">ISBN <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="isbn" name="isbn" required>
+                                    <small class="form-text text-muted">Enter the 10 or 13-digit ISBN number</small>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="publicationYear">Publication Year <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="publicationYear" name="publicationYear" min="1000" max="2099" required>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="publisher">Publisher</label>
+                                    <input type="text" class="form-control" id="publisher" name="publisher">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h5 class="form-section-title">Categories & Location</h5>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="categoryId">Primary Category</label>
+                                    <select class="form-control" id="categoryId" name="categoryId">
+                                        <option value="">-- Select Category --</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.CategoryID }}">{{ category.CategoryName }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="additionalCategories">Additional Categories</label>
+                                    <select class="form-control select2" id="additionalCategories" name="additionalCategories" multiple>
+                                        {% for category in categories %}
+                                        <option value="{{ category.CategoryID }}">{{ category.CategoryName }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple categories</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="shelfLocation">Shelf Location</label>
+                                    <input type="text" class="form-control" id="shelfLocation" name="shelfLocation" placeholder="e.g., Fiction-A1">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option value="Available" selected>Available</option>
+                                        <option value="Checked Out">Checked Out</option>
+                                        <option value="Reserved">Reserved</option>
+                                        <option value="Lost">Lost</option>
+                                        <option value="Under Repair">Under Repair</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h5 class="form-section-title">Inventory</h5>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="totalCopies">Total Copies</label>
+                                    <input type="number" class="form-control" id="totalCopies" name="totalCopies" value="1" min="1">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="availableCopies">Available Copies</label>
+                                    <input type="number" class="form-control" id="availableCopies" name="availableCopies" value="1" min="0">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group text-right">
+                            <a href="{{ url_for('catalog') }}" class="btn btn-secondary mr-2">Cancel</a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Save Book
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                placeholder: "Select categories"
+            });
+            
+            // Keep total copies and available copies in sync
+            $('#totalCopies').on('change', function() {
+                if ($('#status').val() === 'Available') {
+                    $('#availableCopies').val($(this).val());
+                }
+            });
+            
+            // Status changes should affect available copies
+            $('#status').on('change', function() {
+                const total = parseInt($('#totalCopies').val()) || 1;
+                
+                if ($(this).val() === 'Available') {
+                    $('#availableCopies').val(total);
+                } else {
+                    $('#availableCopies').val(0);  
+                }
+            });
+        });
+    </script>
+</body>
+</html>
