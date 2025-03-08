@@ -1,29 +1,24 @@
-import os
 from datetime import timedelta
+import os
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key-here'
+    # Security settings
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'mysecretlibrarysystem'
+    PERMANENT_SESSION_LIFETIME = timedelta(days=1)
     
-    # Database configuration
-    # SQLite (default/fallback database that works without configuration)
-    #SQLALCHEMY_DATABASE_URI = 'sqlite:///library.db'
+    # Database settings
+    DB_SERVER = os.environ.get('DESKTOP-170MKOG') or 'localhost'
+    DB_NAME = os.environ.get('library_system') or 'library_system'
+    DB_DRIVER = os.environ.get('DB_DRIVER') or 'ODBC Driver 17 for SQL Server'
     
-    # SQL Server connection options - uncomment and adjust ONE of these options as needed
-    # Option 1: Using ODBC Driver with DSN
-    # SQLALCHEMY_DATABASE_URI = 'mssql+pyodbc:///?odbc_connect=DSN=YourDSNName;'
+    # Connection string for pyodbc
+    DB_CONNECTION_STRING = f"DRIVER={{{DB_DRIVER}}};SERVER={DB_SERVER};DATABASE={DB_NAME};Trusted_Connection=yes;"
     
-    #Option 2: Using ODBC Driver with direct connection string (Windows Authentication)
-    SQLALCHEMY_DATABASE_URI = 'mssql+pyodbc:///?odbc_connect=DRIVER={ODBC Driver 17 for SQL Server};SERVER=DESKTOP-170MKOG;DATABASE=library_system;Trusted_Connection=yes;'
-    
-    # Option 3: Using ODBC Driver with SQL authentication
-    # SQLALCHEMY_DATABASE_URI = 'mssql+pyodbc://username:password@DESKTOP-170MKOG/library_system?driver=ODBC+Driver+17+for+SQL+Server'
-    
-    # General settings
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    BACKUP_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'backups')
-    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+    # Backup settings
+    BACKUP_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backups')
     
     @staticmethod
     def init_app(app):
         # Create backup folder if it doesn't exist
-        os.makedirs(Config.BACKUP_FOLDER, exist_ok=True)
+        if not os.path.exists(Config.BACKUP_FOLDER):
+            os.makedirs(Config.BACKUP_FOLDER)

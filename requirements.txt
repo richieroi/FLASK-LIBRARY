@@ -1,18 +1,13 @@
-# Core dependencies
-Flask==2.0.1
-Flask-SQLAlchemy==2.5.1
-SQLAlchemy==1.4.23
-Werkzeug==2.0.1
-Jinja2==3.0.1
-
-# Database
-pyodbc==4.0.32
+# Core dependencies - simplified without ORM
+Flask==2.2.5
+Werkzeug==2.2.3
+Jinja2==3.1.2
 
 # Security
-itsdangerous==2.0.1
+itsdangerous==2.1.2
 
 # Additional utilities
 python-dateutil==2.8.2
 
 # Development tools
-Flask-Migrate==3.1.0
+Flask-Migrate==4.0.5
