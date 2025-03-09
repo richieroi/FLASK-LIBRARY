@@ -1,0 +1,112 @@
+{% extends 'layout.html' %}
+
+{% block title %}Issue Book{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Issue Book</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('catalog') }}">Books</a></li>
+        <li class="breadcrumb-item active">Issue Book</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4 form-card">
+                <div class="card-header">
+                    <i class="fas fa-book-reader me-1"></i>
+                    Issue Book to Member
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Book Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <th>Title:</th>
+                                            <td>{{ book.Title }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Author:</th>
+                                            <td>{{ book.Author }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>ISBN:</th>
+                                            <td>{{ book.ISBN }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Status:</th>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if book.Status == 'Available' else 'danger' }}">
+                                                    {{ book.Status }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">Loan Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form action="{{ url_for('issue_book', book_id=book.BookID) }}" method="post">
+                                        <div class="mb-3">
+                                            <label for="member_id" class="form-label">Select Member</label>
+                                            <select class="form-select" id="member_id" name="member_id" required>
+                                                <option value="">-- Select Member --</option>
+                                                {% for member in members %}
+                                                <option value="{{ member.MemberID }}">
+                                                    {{ member.FirstName }} {{ member.LastName }} (ID: {{ member.MemberID }})
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="loan_date" class="form-label">Loan Date</label>
+                                            <input type="text" class="form-control" id="loan_date" name="loan_date" value="{{ today }}" readonly>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="due_date" class="form-label">Due Date</label>
+                                            <input type="date" class="form-control datepicker" id="due_date" name="due_date" value="{{ default_due_date }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="notes" class="form-label">Notes</label>
+                                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                                        </div>
+                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                            <a href="{{ url_for('view_book', book_id=book.BookID) }}" class="btn btn-secondary me-md-2">Cancel</a>
+                                            <button type="submit" class="btn btn-primary">Issue Book</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize flatpickr for date fields
+        flatpickr(".datepicker", {
+            dateFormat: "Y-m-d",
+            minDate: "today"
+        });
+    });
+</script>
+{% endblock %}

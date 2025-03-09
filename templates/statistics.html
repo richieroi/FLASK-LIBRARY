@@ -1,0 +1,266 @@
+{% extends 'layout.html' %}
+
+{% block title %}Library Statistics{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Library Statistics Dashboard</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Statistics</li>
+    </ol>
+    
+    <!-- Key Metrics Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <h2 class="display-4 text-center">{{ total_books }}</h2>
+                    <h5 class="text-center">Total Books</h5>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('catalog') }}">View Books</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <h2 class="display-4 text-center">{{ active_members }}</h2>
+                    <h5 class="text-center">Active Members</h5>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('list_members') }}">View Members</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <h2 class="display-4 text-center">{{ active_loans }}</h2>
+                    <h5 class="text-center">Active Loans</h5>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('list_loans') }}">View Loans</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">
+                    <h2 class="display-4 text-center">{{ overdue_loans }}</h2>
+                    <h5 class="text-center">Overdue Books</h5>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ url_for('list_loans') }}">View Details</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Monthly Loan Trends Chart -->
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-line me-1"></i>
+                    Monthly Loan Trends (Past Year)
+                </div>
+                <div class="card-body">
+                    <canvas id="loanTrendChart" width="100%" height="50"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Category Distribution Chart -->
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-1"></i>
+                    Book Categories Distribution
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" width="100%" height="50"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- More Charts Row -->
+    <div class="row">
+        <!-- Popular Books Chart -->
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    Most Popular Books
+                </div>
+                <div class="card-body">
+                    <canvas id="popularBooksChart" width="100%" height="50"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Member Registration Chart -->
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-users me-1"></i>
+                    Member Registration Trend
+                </div>
+                <div class="card-body">
+                    <canvas id="memberRegistrationChart" width="100%" height="50"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Monthly Loan Trends Chart
+    var loanCtx = document.getElementById('loanTrendChart').getContext('2d');
+    var loanTrendChart = new Chart(loanCtx, {
+        type: 'line',
+        data: {
+            labels: {{ months|tojson }},
+            datasets: [{
+                label: 'Number of Loans',
+                data: {{ loan_counts|tojson }},
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Loans'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Category Distribution Chart
+    var catCtx = document.getElementById('categoryChart').getContext('2d');
+    var catData = {
+        labels: [{% for cat in categories %}'{{ cat.CategoryName }}',{% endfor %}],
+        datasets: [{
+            data: [{% for cat in categories %}{{ cat.book_count }},{% endfor %}],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.6)',
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 206, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(153, 102, 255, 0.6)',
+                'rgba(255, 159, 64, 0.6)',
+                'rgba(255, 99, 132, 0.6)',
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 206, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(153, 102, 255, 0.6)'
+            ]
+        }]
+    };
+    var categoryChart = new Chart(catCtx, {
+        type: 'pie',
+        data: catData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                }
+            }
+        }
+    });
+    
+    // Popular Books Chart
+    var popBooksCtx = document.getElementById('popularBooksChart').getContext('2d');
+    var popBooksData = {
+        labels: [{% for book in popular_books %}'{{ book.Title }}',{% endfor %}],
+        datasets: [{
+            label: 'Number of Loans',
+            data: [{% for book in popular_books %}{{ book.loan_count }},{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    };
+    var popularBooksChart = new Chart(popBooksCtx, {
+        type: 'bar',
+        data: popBooksData,
+        options: {
+            indexAxis: 'y',  // Horizontal bar chart
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Loans'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Member Registration Chart
+    var memberCtx = document.getElementById('memberRegistrationChart').getContext('2d');
+    var memberRegChart = new Chart(memberCtx, {
+        type: 'line',
+        data: {
+            labels: {{ reg_months|tojson }},
+            datasets: [{
+                label: 'New Members',
+                data: {{ reg_counts|tojson }},
+                borderColor: 'rgba(153, 102, 255, 1)',
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Registrations'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

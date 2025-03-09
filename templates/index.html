@@ -282,7 +282,7 @@
         
         .counter-label {
             font-weight: 500;
-            color: var(--dark-color);
+            color: var(--dark-color);;
         }
         
         @media (max-width: 768px) {
@@ -314,7 +314,7 @@
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
                 <i class="fas fa-book-reader fa-lg"></i>
-                Alexandria Library
+                Jael Library
             </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -339,7 +339,7 @@
                             <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn btn-primary text-white ml-3" href="{{ url_for('auth.register') }}">Sign Up</a>
+                            <a class="nav-link btn btn-primary text-white ml-3" href="{{ url_for('auth.register') }}">Become a Member</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -506,7 +506,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5>Alexandria Library Management System</h5>
+                    <h5>Jael Library Management System</h5>
                     <p>Supporting communities through the power of reading and access to information.</p>
                 </div>
                 <div class="col-md-3">
@@ -521,16 +521,16 @@
                 <div class="col-md-3">
                     <h5>Contact</h5>
                     <ul class="list-unstyled">
-                        <li><i class="fas fa-envelope mr-2"></i>library@alexandria.com</li>
+                        <li><i class="fas fa-envelope mr-2"></i>library@jael.com</li>
                         <li><i class="fas fa-phone mr-2"></i>(555) 123-4567</li>
-                        <li><i class="fas fa-map-marker-alt mr-2"></i>101 Library Avenue, Booktown</li>
+                        <li><i class="fas fa-map-marker-alt mr-2"></i>Takoradi, Ghana</li>
                         <li><i class="fas fa-clock mr-2"></i>Mon-Sat: 9AM - 8PM</li>
                     </ul>
                 </div>
             </div>
             <hr class="mt-4 mb-4" style="border-color: rgba(255,255,255,0.1);">
             <div class="text-center">
-                <p class="mb-0">&copy; {{ now.year if now else 2023 }} Alexandria Library Management System. All rights reserved.</p>
+                <p class="mb-0">&copy; {{ now.year if now else 2023 }} Jael Library Management System. All rights reserved.</p>
             </div>
         </div>
     </footer>

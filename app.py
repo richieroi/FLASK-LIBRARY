@@ -3,12 +3,12 @@ import shutil
 import pyodbc
 import json
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, flash, g, session, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, g, session, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from config import Config
-from auth import auth, login_required, admin_required
+from auth import auth, login_required, staff_required, admin_required
 
 app = Flask(__name__)
 
@@ -195,16 +195,46 @@ def dashboard():
         columns = [column[0] for column in cursor.description]
         recent_activities = [dict(zip(columns, row)) for row in cursor.fetchall()]
         
-        # Recent loans
+        # Recent loans - get more detailed information
         cursor.execute(
-            "SELECT TOP 5 l.*, b.Title as BookTitle, m.FirstName + ' ' + m.LastName as MemberName "
+            "SELECT TOP 5 l.*, "
+            "b.Title, b.Author, b.ISBN, b.Status as BookStatus, "
+            "m.FirstName, m.LastName, m.MemberID, m.Email, m.Status as MemberStatus "
             "FROM loans l "
             "JOIN books b ON l.BookID = b.BookID "
             "JOIN members m ON l.MemberID = m.MemberID "
             "ORDER BY l.LoanDate DESC"
         )
         columns = [column[0] for column in cursor.description]
-        recent_loans = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        loans_data = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        # Restructure loans to include both nested book and member objects
+        recent_loans = []
+        for loan in loans_data:
+            # Create a book object from the book fields
+            book = {
+                'Title': loan.pop('Title'),
+                'Author': loan.pop('Author'),
+                'ISBN': loan.pop('ISBN'),
+                'Status': loan.pop('BookStatus')
+            }
+            
+            # Create a member object from the member fields
+            member_first_name = loan.pop('FirstName')
+            member_last_name = loan.pop('LastName')
+            member = {
+                'MemberID': loan.pop('MemberID'),
+                'FirstName': member_first_name,
+                'LastName': member_last_name,
+                'FullName': f"{member_first_name} {member_last_name}",
+                'Email': loan.pop('Email'),
+                'Status': loan.pop('MemberStatus')
+            }
+            
+            # Add the book and member objects to the loan
+            loan['book'] = book
+            loan['member'] = member
+            recent_loans.append(loan)
     
     return render_template(
         'dashboard.html',
@@ -300,9 +330,44 @@ def view_book(book_id):
     
     return render_template('book_details.html', book=book)
 
+# Route to display the issue book form
+@app.route('/book/<int:book_id>/issue', methods=['GET'])
+@staff_required  # Change from login_required to staff_required
+def issue_book_form(book_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Get book details
+        cursor.execute("SELECT * FROM books WHERE BookID = ?", book_id)
+        book = cursor.fetchone()
+        
+        if not book:
+            flash('Book not found.', 'error')
+            return redirect(url_for('catalog'))
+        
+        if book.Status != 'Available':
+            flash('This book is not available for loan.', 'error')
+            return redirect(url_for('view_book', book_id=book_id))
+        
+        # Get active members for dropdown
+        cursor.execute("SELECT * FROM members WHERE Status = 'Active' ORDER BY LastName, FirstName")
+        members = cursor.fetchall()
+        
+        # Set default due date (14 days from today)
+        today = datetime.now().strftime('%Y-%m-%d')
+        default_due_date = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+    
+    return render_template(
+        'issue_book.html',
+        book=book,
+        members=members,
+        today=today,
+        default_due_date=default_due_date
+    )
+
 # Member listing
 @app.route('/members')
-@login_required
+@staff_required  # Change from login_required to staff_required
 def list_members():
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -312,15 +377,198 @@ def list_members():
     
     return render_template('members.html', members=members)
 
+# Member details view
+@app.route('/members/<int:member_id>')
+@staff_required  # Change from login_required to staff_required
+def view_member(member_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Get member details
+        cursor.execute("SELECT * FROM members WHERE MemberID = ?", member_id)
+        member = cursor.fetchone()
+        
+        if not member:
+            flash('Member not found', 'danger')
+            return redirect(url_for('list_members'))
+        
+        # Get active loans for this member
+        cursor.execute(
+            "SELECT l.*, "
+            "b.Title as BookTitle, b.Author as BookAuthor, b.ISBN as BookISBN, b.Status as BookStatus "
+            "FROM loans l "
+            "JOIN books b ON l.BookID = b.BookID "
+            "WHERE l.MemberID = ? AND l.Status IN ('Borrowed', 'Overdue')",
+            member_id
+        )
+        
+        # Convert active loans to structured data with nested book objects
+        active_loans = []
+        for row in cursor.fetchall():
+            loan = {column[0]: value for column, value in zip(cursor.description, row)}
+            loan['book'] = {
+                'Title': loan.pop('BookTitle'),
+                'Author': loan.pop('BookAuthor'),
+                'ISBN': loan.pop('BookISBN'),
+                'Status': loan.pop('BookStatus')
+            }
+            active_loans.append(loan)
+        
+        # Get loan history
+        cursor.execute(
+            "SELECT l.*, "
+            "b.Title as BookTitle, b.Author as BookAuthor "
+            "FROM loans l "
+            "JOIN books b ON l.BookID = b.BookID "
+            "WHERE l.MemberID = ? AND l.Status = 'Returned' "
+            "ORDER BY l.ReturnDate DESC "
+            "OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY",
+            member_id
+        )
+        
+        # Convert loan history to structured data with nested book objects
+        loan_history = []
+        for row in cursor.fetchall():
+            loan = {column[0]: value for column, value in zip(cursor.description, row)}
+            loan['book'] = {
+                'Title': loan.pop('BookTitle'),
+                'Author': loan.pop('BookAuthor')
+            }
+            loan_history.append(loan)
+    
+    # Get current date for comparison with expiry date
+    now = datetime.now()
+    
+    return render_template(
+        'member_details.html', 
+        member=member, 
+        active_loans=active_loans, 
+        loan_history=loan_history,
+        now=now
+    )
+
+# API endpoints for member actions
+@app.route('/api/members/<int:member_id>', methods=['GET'])
+@login_required
+def get_member_api(member_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM members WHERE MemberID = ?", member_id)
+        member = cursor.fetchone()
+        
+        if not member:
+            return jsonify({"error": "Member not found"}), 404
+        
+        # Convert to dictionary
+        member_dict = {
+            'MemberID': member.MemberID,
+            'FirstName': member.FirstName,
+            'LastName': member.LastName,
+            'Email': member.Email,
+            'Phone': member.Phone,
+            'Address': member.Address,
+            'MembershipDate': member.MembershipDate.isoformat() if member.MembershipDate else None,
+            'MembershipExpiry': member.MembershipExpiry.isoformat() if member.MembershipExpiry else None,
+            'Status': member.Status
+        }
+        
+        return jsonify(member_dict)
+
+@app.route('/api/members/<int:member_id>/loans', methods=['GET'])
+@login_required
+def get_member_loans_api(member_id):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Get all loans for the member
+        cursor.execute(
+            "SELECT l.*, b.Title as BookTitle, b.Author as BookAuthor "
+            "FROM loans l "
+            "JOIN books b ON l.BookID = b.BookID "
+            "WHERE l.MemberID = ? "
+            "ORDER BY l.LoanDate DESC",
+            member_id
+        )
+        
+        loans = []
+        for row in cursor.fetchall():
+            loan_dict = {
+                'LoanID': row.LoanID,
+                'BookID': row.BookID,
+                'BookTitle': row.BookTitle,
+                'BookAuthor': row.BookAuthor,
+                'LoanDate': row.LoanDate.isoformat() if row.LoanDate else None,
+                'DueDate': row.DueDate.isoformat() if row.DueDate else None,
+                'ReturnDate': row.ReturnDate.isoformat() if row.ReturnDate else None,
+                'Status': row.Status,
+                'FineAmount': float(row.FineAmount) if row.FineAmount else 0.00
+            }
+            loans.append(loan_dict)
+        
+        return jsonify(loans)
+
 # Loan listing
 @app.route('/loans')
-@login_required
+@staff_required  # Change from login_required to staff_required
 def list_loans():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
-        cursor.execute("SELECT * FROM loans")
-        loans = cursor.fetchall()
+        # First, let's get all the loan records with their related data
+        cursor.execute(
+            "SELECT l.*, "
+            "b.Title as BookTitle, b.Author as BookAuthor, b.ISBN as BookISBN, b.Status as BookStatus, "
+            "m.FirstName as MemberFirstName, m.LastName as MemberLastName, "
+            "m.MemberID as MemberID, m.Email as MemberEmail, m.Status as MemberStatus "
+            "FROM loans l "
+            "JOIN books b ON l.BookID = b.BookID "
+            "JOIN members m ON l.MemberID = m.MemberID "
+            "ORDER BY l.LoanDate DESC"
+        )
+        
+        # Convert all rows to dictionaries explicitly with clearer property names
+        raw_loans = []
+        for row in cursor.fetchall():
+            # Create a dictionary for each row with column names as keys
+            loan_dict = {}
+            for idx, column in enumerate(cursor.description):
+                loan_dict[column[0]] = row[idx]
+            raw_loans.append(loan_dict)
+        
+        # Now create the properly structured loans with nested objects
+        loans = []
+        for raw_loan in raw_loans:
+            # Create a structured loan object
+            loan = {
+                'LoanID': raw_loan['LoanID'],
+                'BookID': raw_loan['BookID'],
+                'MemberID': raw_loan['MemberID'],
+                'LoanDate': raw_loan['LoanDate'],
+                'DueDate': raw_loan['DueDate'],
+                'ReturnDate': raw_loan['ReturnDate'] if 'ReturnDate' in raw_loan else None,
+                'Status': raw_loan['Status'],
+                'FineAmount': raw_loan['FineAmount'] if 'FineAmount' in raw_loan else 0,
+                'Notes': raw_loan['Notes'] if 'Notes' in raw_loan else '',
+                
+                # Add nested book object
+                'book': {
+                    'Title': raw_loan['BookTitle'],
+                    'Author': raw_loan['BookAuthor'],
+                    'ISBN': raw_loan['BookISBN'],
+                    'Status': raw_loan['BookStatus']
+                },
+                
+                # Add nested member object
+                'member': {
+                    'MemberID': raw_loan['MemberID'],
+                    'FirstName': raw_loan['MemberFirstName'],
+                    'LastName': raw_loan['MemberLastName'],
+                    'FullName': f"{raw_loan['MemberFirstName']} {raw_loan['MemberLastName']}",
+                    'Email': raw_loan['MemberEmail'],
+                    'Status': raw_loan['MemberStatus']
+                }
+            }
+            loans.append(loan)
     
     return render_template('loans.html', loans=loans)
 
@@ -888,7 +1136,7 @@ def admin_delete_backup():
 
 # Book management routes
 @app.route('/add_book', methods=['POST'])
-@login_required
+@staff_required  # Change from login_required to staff_required
 def add_book():
     if request.method == 'POST':
         title = request.form.get('title')
@@ -935,7 +1183,7 @@ def add_book():
             return redirect(url_for('catalog'))
 
 @app.route('/edit_book/<int:book_id>', methods=['POST'])
-@login_required
+@staff_required  # Change from login_required to staff_required
 def edit_book(book_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -1043,7 +1291,7 @@ def delete_book(book_id):
 
 # Loan management routes
 @app.route('/issue_book/<int:book_id>', methods=['POST'])
-@login_required
+@staff_required  # Change from login_required to staff_required
 def issue_book(book_id):
     if request.method == 'POST':
         with get_db_connection() as conn:
@@ -1107,10 +1355,11 @@ def issue_book(book_id):
             
             flash(f'Book "{book.Title}" has been issued to {member.FirstName} {member.LastName}.')
         
-        return redirect(url_for('view_book', book_id=book_id))
+        # Redirect to loans page instead of book details
+        return redirect(url_for('list_loans'))
 
 @app.route('/return_book/<int:book_id>', methods=['POST'])
-@login_required
+@staff_required  # Change from login_required to staff_required
 def return_book(book_id):
     if request.method == 'POST':
         with get_db_connection() as conn:
@@ -1160,11 +1409,11 @@ def return_book(book_id):
             
             flash(f'Book "{book.Title}" has been returned.')
         
-        return redirect(url_for('view_book', book_id=book_id))
+        return redirect(url_for('list_loans'))
 
 # Member management routes
 @app.route('/add_member', methods=['POST'])
-@login_required
+@staff_required  # Change from login_required to staff_required
 def add_member():
     if request.method == 'POST':
         first_name = request.form.get('firstName')
@@ -1222,7 +1471,7 @@ def add_member():
             return redirect(url_for('list_members'))
 
 @app.route('/edit_member/<int:member_id>', methods=['POST'])
-@login_required
+@staff_required  # Change from login_required to staff_required
 def edit_member(member_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -1351,6 +1600,103 @@ def generate_report():
         
         flash('Invalid report type selected.')
         return redirect(url_for('reports'))
+
+# Library Statistics Dashboard
+@app.route('/statistics')
+@login_required  # Keep as login_required as this could be for all logged-in users
+def library_statistics():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Overall statistics
+        cursor.execute("SELECT COUNT(*) FROM books")
+        total_books = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM members WHERE Status = 'Active'")
+        active_members = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM loans WHERE Status = 'Borrowed'")
+        active_loans = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM loans WHERE Status = 'Overdue'")
+        overdue_loans = cursor.fetchone()[0]
+        
+        # Most popular books (top 10)
+        cursor.execute("""
+            SELECT b.Title, COUNT(l.LoanID) as loan_count 
+            FROM books b
+            JOIN loans l ON b.BookID = l.BookID
+            GROUP BY b.Title
+            ORDER BY loan_count DESC
+            OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
+        """)
+        popular_books = cursor.fetchall()
+        
+        # Monthly loan statistics for the past year
+        cursor.execute("""
+            SELECT 
+                DATEPART(YEAR, LoanDate) as year,
+                DATEPART(MONTH, LoanDate) as month,
+                COUNT(*) as loan_count
+            FROM loans
+            WHERE LoanDate >= DATEADD(YEAR, -1, GETDATE())
+            GROUP BY DATEPART(YEAR, LoanDate), DATEPART(MONTH, LoanDate)
+            ORDER BY year, month
+        """)
+        monthly_loans = cursor.fetchall()
+        
+        # Format the monthly data for Chart.js
+        months = []
+        loan_counts = []
+        for row in monthly_loans:
+            month_name = datetime(row.year, row.month, 1).strftime('%b %Y')
+            months.append(month_name)
+            loan_counts.append(row.loan_count)
+        
+        # Category distribution
+        cursor.execute("""
+            SELECT c.CategoryName, COUNT(b.BookID) as book_count
+            FROM categories c
+            LEFT JOIN books b ON c.CategoryID = b.CategoryID
+            GROUP BY c.CategoryName
+            ORDER BY book_count DESC
+        """)
+        categories = cursor.fetchall()
+        
+        # Member registration trends
+        cursor.execute("""
+            SELECT 
+                DATEPART(YEAR, MembershipDate) as year,
+                DATEPART(MONTH, MembershipDate) as month,
+                COUNT(*) as member_count
+            FROM members
+            WHERE MembershipDate >= DATEADD(YEAR, -1, GETDATE())
+            GROUP BY DATEPART(YEAR, MembershipDate), DATEPART(MONTH, MembershipDate)
+            ORDER BY year, month
+        """)
+        member_registrations = cursor.fetchall()
+        
+        # Format the registration data for Chart.js
+        reg_months = []
+        reg_counts = []
+        for row in member_registrations:
+            month_name = datetime(row.year, row.month, 1).strftime('%b %Y')
+            reg_months.append(month_name)
+            reg_counts.append(row.member_count)
+    
+    return render_template(
+        'statistics.html',
+        total_books=total_books,
+        active_members=active_members,
+        active_loans=active_loans,
+        overdue_loans=overdue_loans,
+        popular_books=popular_books,
+        months=months,
+        loan_counts=loan_counts,
+        categories=categories,
+        reg_months=reg_months,
+        reg_counts=reg_counts
+    )
 
 @app.errorhandler(404)
 def page_not_found(e):
